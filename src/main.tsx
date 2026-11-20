@@ -89,11 +89,11 @@ function GlossaryTitle() {
 }
 
 type CardNote = { text: string; arrow: keyof typeof noteArrows };
-type CardProps = { name: string; note?: CardNote; className: keyof typeof effectPrompts; children: ReactNode };
+type CardProps = { name: string; note?: CardNote; className: keyof typeof effectPrompts; children: ReactNode; entranceDelay?: number };
 
 const noteArrows = {
-  sweep: 'M21 5C10 4 -6 8 -18 22m0 0 3-8m-3 8 8-2',
-  loop: 'M21 5C11 12 0 10 3 3C6 -3 14 3 8 9C2 15 -7 13 -18 22m0 0 4-8m-4 8 9-1',
+  sweep: 'M21 7C8 4 -5 6 -18 12m0 0 5-6m-5 6 8 1',
+  loop: 'M21 7C11 15 0 11 3 5C6 -1 14 3 8 9C2 15 -8 8 -18 12m0 0 5-6m-5 6 8 2',
 };
 
 function CopyPrompt({ name, prompt }: { name: string; prompt: string }) {
@@ -130,16 +130,16 @@ function CopyPrompt({ name, prompt }: { name: string; prompt: string }) {
   );
 }
 
-const entranceStart = { opacity: 0, y: 6 };
+const entranceStart = { opacity: 0, y: 14 };
 const entranceEnd = { opacity: 1, y: 0 };
-const entranceTransition = { duration: .3, ease: [.23, 1, .32, 1] as const };
+const entranceTransition = { duration: .48, ease: [.23, 1, .32, 1] as const };
 
-function Card({ name, note, className, children }: CardProps) {
+function Card({ name, note, className, children, entranceDelay = .48 }: CardProps) {
   const reduced = useReducedMotion();
   return (
     <motion.article className={'card ' + className}
       initial={reduced ? false : entranceStart} whileInView={entranceEnd}
-      viewport={{ once: true, amount: 'some' }} transition={entranceTransition}>
+      viewport={{ once: true, amount: 'some' }} transition={{ ...entranceTransition, delay: entranceDelay }}>
       <div className="stage">{children}</div>
       <header className="card-label"><h2>{name}</h2></header>
       <CopyPrompt name={name} prompt={effectPrompts[className]}/>
@@ -462,21 +462,25 @@ function App() {
           <nav aria-label="Main"><a className="nav-link" href="/design-system" aria-current={isDesignSystem ? 'page' : undefined}>Design system</a></nav>
         </header>
         {isDesignSystem ? <DesignSystem theme={theme}/> : <main>
-          <motion.header className="intro gallery-intro"
-            initial={reduced ? false : entranceStart} animate={entranceEnd} transition={entranceTransition}>
-            <GlossaryTitle/>
-            <p>Try interactive UI effects, learn their English names, and use those terms to write more precise prompts.</p>
-          </motion.header>
+          <header className="intro gallery-intro">
+            <motion.div initial={reduced ? false : entranceStart} animate={entranceEnd} transition={entranceTransition}>
+              <GlossaryTitle/>
+            </motion.div>
+            <motion.p initial={reduced ? false : entranceStart} animate={entranceEnd}
+              transition={{ ...entranceTransition, delay: .12 }}>
+              Try interactive UI effects, learn their English names, and use those terms to write more precise prompts.
+            </motion.p>
+          </header>
           <section className="bento" aria-label="UI effect demos">
-            <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt"><Tilt/></Card>
-            <Card name="Gooey menu" note={{ text: "click +", arrow: "sweep" }} className="goo"><Gooey/></Card>
-            <Card name="Water ripple" className="water-ripple"><WaterRipple/></Card>
-            <Card name="Liquid glass" className="glass"><Glass/></Card>
-            <Card name="Gravity simulation" className="gravity"><Gravity/></Card>
+            <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt" entranceDelay={.24}><Tilt/></Card>
+            <Card name="Gooey menu" note={{ text: "click +", arrow: "sweep" }} className="goo" entranceDelay={.32}><Gooey/></Card>
+            <Card name="Water ripple" note={{ text: "click", arrow: "sweep" }} className="water-ripple" entranceDelay={.40}><WaterRipple/></Card>
+            <Card name="Liquid Glass" className="glass"><Glass/></Card>
+            <Card name="Gravity simulation" className="gravity" entranceDelay={.56}><Gravity/></Card>
             <Card name="Magnetic button" className="magnetic"><Magnetic/></Card>
-            <Card name="Odometer counter" className="odometer"><Odometer/></Card>
-            <Card name="Dot field" className="dot-field"><DotField/></Card>
-            <Card name="Elastic slider" className="elastic"><Slider/></Card>
+            <Card name="Rolling digits" className="odometer" entranceDelay={.56}><Odometer/></Card>
+            <Card name="Dot grid repulsion" className="dot-field"><DotField/></Card>
+            <Card name="Elastic slider" className="elastic" entranceDelay={.56}><Slider/></Card>
             {showGooeyDock && <Card name="Gooey dock" className="gooey-dock"><GooeyDock/></Card>}
             {showSharedLayout && <Card name="Shared layout" className="shared"><Shared/></Card>}
           </section>

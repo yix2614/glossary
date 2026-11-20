@@ -287,7 +287,6 @@ function FollowToast() {
 
 const showSharedLayout = false;
 const showGooeyDock = false;
-const showFollowToast = false;
 
 function App() {
   const route = useRoute();
@@ -331,7 +330,7 @@ function App() {
         <footer>
           <a href={profileUrl} target="_blank" rel="noopener noreferrer">© 2026 Yi Xiang</a>
         </footer>
-        {showFollowToast && !isDesignSystem && <FollowToast/>}
+        {!isDesignSystem && <FollowToast/>}
         <ThemeToggle theme={theme} onChange={setTheme}/>
       </div>
     </MotionConfig>

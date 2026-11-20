@@ -130,9 +130,16 @@ function CopyPrompt({ name, prompt }: { name: string; prompt: string }) {
   );
 }
 
+const entranceStart = { opacity: 0, y: 6 };
+const entranceEnd = { opacity: 1, y: 0 };
+const entranceTransition = { duration: .3, ease: [.23, 1, .32, 1] as const };
+
 function Card({ name, note, className, children }: CardProps) {
+  const reduced = useReducedMotion();
   return (
-    <article className={'card ' + className}>
+    <motion.article className={'card ' + className}
+      initial={reduced ? false : entranceStart} whileInView={entranceEnd}
+      viewport={{ once: true, amount: 'some' }} transition={entranceTransition}>
       <div className="stage">{children}</div>
       <header className="card-label"><h2>{name}</h2></header>
       <CopyPrompt name={name} prompt={effectPrompts[className]}/>
@@ -144,7 +151,7 @@ function Card({ name, note, className, children }: CardProps) {
           {note.text}
         </span>
       )}
-    </article>
+    </motion.article>
   );
 }
 
@@ -441,6 +448,7 @@ const showGooeyDock = false;
 
 function App() {
   const route = useRoute();
+  const reduced = useReducedMotion();
   const isDesignSystem = route.split(/[?#]/, 1)[0].replace(/\/$/, '') === '/design-system';
   const [theme, setTheme] = useState(getSavedTheme);
   useEffect(() => {
@@ -454,10 +462,11 @@ function App() {
           <nav aria-label="Main"><a className="nav-link" href="/design-system" aria-current={isDesignSystem ? 'page' : undefined}>Design system</a></nav>
         </header>
         {isDesignSystem ? <DesignSystem theme={theme}/> : <main>
-          <header className="intro gallery-intro">
+          <motion.header className="intro gallery-intro"
+            initial={reduced ? false : entranceStart} animate={entranceEnd} transition={entranceTransition}>
             <GlossaryTitle/>
             <p>Try interactive UI effects, learn their English names, and use those terms to write more precise prompts.</p>
-          </header>
+          </motion.header>
           <section className="bento" aria-label="UI effect demos">
             <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt"><Tilt/></Card>
             <Card name="Gooey menu" note={{ text: "click +", arrow: "sweep" }} className="goo"><Gooey/></Card>

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import waterBackdrop from './assets/water-diagonal-hd.jpg';
+import waterBackdrop from './assets/water-diagonal-hd.webp';
 
 const cell = 4;
 const timestep = 1000 / 60;

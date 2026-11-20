@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Moon, Sun } from '@phosphor-icons/react';
+import { MoonIcon as Moon } from '@phosphor-icons/react/dist/icons/Moon';
+import { SunIcon as Sun } from '@phosphor-icons/react/dist/icons/Sun';
 
 export type Theme = 'light' | 'dark';
 const storageKey = 'prompt-glossary-theme';

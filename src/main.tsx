@@ -1,28 +1,35 @@
-import { StrictMode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import { lazy, StrictMode, Suspense, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GridTransitionProvider, InterceptLinks, useRoute } from 'transitery/react';
-import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion } from 'motion/react';
-import {
-  Aperture, ArrowsOut, Check, Cursor, Heart,
-  Lightning, Minus, Plus, Sparkle, SquaresFour, Stack, X,
-} from '@phosphor-icons/react';
-import { Button } from './arc/button/button';
-import { ElasticSlider } from './arc/elastic-slider/elastic-slider';
-import { DesignSystem } from './design-system';
-import { DotField, GooeyDock } from './studies';
-import { WaterRipple } from './water-ripple';
-import { Gravity } from './gravity';
+import { domAnimation, LazyMotion, MotionConfig, useInView, useReducedMotion } from 'motion/react';
+import * as m from 'motion/react-m';
+import { ApertureIcon as Aperture } from '@phosphor-icons/react/dist/icons/Aperture';
+import { CheckIcon as Check } from '@phosphor-icons/react/dist/icons/Check';
+import { HeartIcon as Heart } from '@phosphor-icons/react/dist/icons/Heart';
+import { LightningIcon as Lightning } from '@phosphor-icons/react/dist/icons/Lightning';
+import { PlusIcon as Plus } from '@phosphor-icons/react/dist/icons/Plus';
+import { SparkleIcon as Sparkle } from '@phosphor-icons/react/dist/icons/Sparkle';
+import { SquaresFourIcon as SquaresFour } from '@phosphor-icons/react/dist/icons/SquaresFour';
 import { effectPrompts } from './effect-prompts';
 import { applyTheme, getSavedTheme, ThemeToggle } from './theme';
-import { buildLensMap, renderLens } from './glass-optics';
-import glassBackdrop from './assets/glass-light.png';
 import profileAvatar from './assets/yi-xiang-avatar.jpg';
 import xLogo from './assets/x-logo-white.svg';
 import './tokens.css';
 import './style.css';
 
-const titleImages = import.meta.glob('./assets/title-letters-v2/*.png', {
+const DesignSystem = lazy(() => import('./design-system').then(module => ({ default: module.DesignSystem })));
+const DotField = lazy(() => import('./studies').then(module => ({ default: module.DotField })));
+const GooeyDock = lazy(() => import('./studies').then(module => ({ default: module.GooeyDock })));
+const WaterRipple = lazy(() => import('./water-ripple').then(module => ({ default: module.WaterRipple })));
+const Gravity = lazy(() => import('./gravity').then(module => ({ default: module.Gravity })));
+const Glass = lazy(() => import('./liquid-glass'));
+const Magnetic = lazy(() => import('./control-demos').then(module => ({ default: module.Magnetic })));
+const Odometer = lazy(() => import('./control-demos').then(module => ({ default: module.Odometer })));
+const Slider = lazy(() => import('./control-demos').then(module => ({ default: module.Slider })));
+const Shared = lazy(() => import('./control-demos').then(module => ({ default: module.Shared })));
+
+const titleImages = import.meta.glob('./assets/title-letters-v2/*.webp', {
   eager: true, import: 'default', query: '?url',
 }) as Record<string, string>;
 
@@ -59,7 +66,7 @@ function GlossaryTitle() {
   const activeAsset = hoveredAsset ?? (reduced ? null : pictured);
 
   return (
-    <h1 className="glossary-title" aria-label="Prompt Glossary" data-direct={hoveredAsset !== null}
+    <h1 className="glossary-title" aria-label="Prompt Glossary"
       onPointerLeave={() => setHoveredAsset(null)}>
       {titleWords.map(assets => (
         <span className="glossary-word" key={assets[0]} aria-hidden="true">
@@ -76,7 +83,8 @@ function GlossaryTitle() {
                   setHoveredAsset(asset);
                 }}>
                 <span>{letter}</span>
-                <img src={titleImages[`./assets/title-letters-v2/${asset}.png`]} alt=""
+                <img src={titleImages[`./assets/title-letters-v2/${asset}.webp`]} alt=""
+                  fetchPriority={asset === 'capital-p' ? 'high' : 'low'}
                   data-photo={photo ? asset : undefined}
                   data-glyph={descender ? 'descender' : tall ? 'tall' : 'short'}/>
               </span>
@@ -89,7 +97,7 @@ function GlossaryTitle() {
 }
 
 type CardNote = { text: string; arrow: keyof typeof noteArrows };
-type CardProps = { name: string; note?: CardNote; className: keyof typeof effectPrompts; children: ReactNode; entranceDelay?: number };
+type CardProps = { name: string; note?: CardNote; className: keyof typeof effectPrompts; children: ReactNode; deferDemo?: boolean; entranceDelay?: number };
 
 const noteArrows = {
   sweep: 'M21 7C8 4 -5 6 -18 12m0 0 5-6m-5 6 8 1',
@@ -134,13 +142,17 @@ const entranceStart = { opacity: 0, y: 14 };
 const entranceEnd = { opacity: 1, y: 0 };
 const entranceTransition = { duration: .48, ease: [.23, 1, .32, 1] as const };
 
-function Card({ name, note, className, children, entranceDelay = .48 }: CardProps) {
+function Card({ name, note, className, children, deferDemo = false, entranceDelay = .48 }: CardProps) {
   const reduced = useReducedMotion();
+  const stage = useRef<HTMLDivElement>(null);
+  const nearViewport = useInView(stage, { once: true, margin: '160px' });
   return (
-    <motion.article className={'card ' + className}
+    <m.article className={'card ' + className}
       initial={reduced ? false : entranceStart} whileInView={entranceEnd}
       viewport={{ once: true, amount: 'some' }} transition={{ ...entranceTransition, delay: entranceDelay }}>
-      <div className="stage">{children}</div>
+      <div className="stage" ref={deferDemo ? stage : undefined}>
+        <Suspense fallback={null}>{(!deferDemo || nearViewport) && children}</Suspense>
+      </div>
       <header className="card-label"><h2>{name}</h2></header>
       <CopyPrompt name={name} prompt={effectPrompts[className]}/>
       {note && (
@@ -151,7 +163,7 @@ function Card({ name, note, className, children, entranceDelay = .48 }: CardProp
           {note.text}
         </span>
       )}
-    </motion.article>
+    </m.article>
   );
 }
 
@@ -222,110 +234,6 @@ function Gooey() {
   );
 }
 
-type Point = { x: number; y: number };
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-function Glass() {
-  const artwork = useRef<HTMLCanvasElement>(null);
-  const refraction = useRef<HTMLCanvasElement>(null);
-  const optics = useRef<{ output: ImageData; map: Float32Array; scale: number } | null>(null);
-  const scenePixels = useRef<ImageData | null>(null);
-  const [sceneSize, setSceneSize] = useState({ width: 0, height: 0, scale: 1 });
-  const [point, setPoint] = useState<Point>({ x: 53, y: 51 });
-  const stage = useRef<HTMLDivElement>(null);
-  const grab = useRef<Point | null>(null);
-  useLayoutEffect(() => {
-    const canvas = artwork.current;
-    const context = canvas?.getContext('2d', { willReadFrequently: true });
-    if (!canvas || !context) return;
-    const image = new Image();
-    let width = 0;
-    let height = 0;
-    function paint() {
-      if (!canvas || !context || !width || !height || !image.naturalWidth) return;
-      const scale = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      context.scale(scale, scale);
-      const imageScale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
-      const imageWidth = image.naturalWidth * imageScale;
-      const imageHeight = image.naturalHeight * imageScale;
-      context.drawImage(image, (width - imageWidth) / 2, (height - imageHeight) * .62, imageWidth, imageHeight);
-      scenePixels.current = context.getImageData(0, 0, canvas.width, canvas.height);
-      setSceneSize({ width, height, scale });
-    }
-    const observer = new ResizeObserver(([entry]) => {
-      ({ width, height } = entry.contentRect);
-      paint();
-    });
-    image.onload = paint;
-    image.src = glassBackdrop;
-    observer.observe(canvas);
-    return () => {
-      observer.disconnect();
-      image.onload = null;
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    const canvas = refraction.current;
-    const source = scenePixels.current;
-    const context = canvas?.getContext('2d');
-    if (!canvas || !context || !source) return;
-    const { width, height, scale } = sceneSize;
-    const bounds = canvas.getBoundingClientRect();
-    const lensWidth = Math.round(bounds.width * scale);
-    const lensHeight = Math.round(bounds.height * scale);
-    if (!lensWidth || !lensHeight) return;
-    let lens = optics.current;
-    if (!lens || lens.output.width !== lensWidth || lens.output.height !== lensHeight || lens.scale !== scale) {
-      canvas.width = lensWidth;
-      canvas.height = lensHeight;
-      lens = {
-        output: context.createImageData(lensWidth, lensHeight),
-        map: buildLensMap(lensWidth, lensHeight, scale),
-        scale,
-      };
-      optics.current = lens;
-    }
-    renderLens(source, lens.output, lens.map, width * point.x / 100 * scale, height * point.y / 100 * scale);
-    context.putImageData(lens.output, 0, 0);
-  }, [point, sceneSize]);
-
-  function move(event: PointerEvent<HTMLButtonElement>) {
-    if (!grab.current || !stage.current) return;
-    const rect = stage.current.getBoundingClientRect();
-    setPoint({
-      x: clamp((event.clientX - rect.left - grab.current.x) / rect.width * 100, 24, 76),
-      y: clamp((event.clientY - rect.top - grab.current.y) / rect.height * 100, 31, 68),
-    });
-  }
-  function nudge(event: KeyboardEvent<HTMLButtonElement>) {
-    const offsets: Record<string, Point> = {
-      ArrowLeft: { x: -4, y: 0 }, ArrowRight: { x: 4, y: 0 },
-      ArrowUp: { x: 0, y: -4 }, ArrowDown: { x: 0, y: 4 },
-    };
-    const offset = offsets[event.key];
-    if (!offset) return;
-    event.preventDefault();
-    setPoint(({ x, y }) => ({ x: clamp(x + offset.x, 24, 76), y: clamp(y + offset.y, 31, 68) }));
-  }
-  return (
-    <div className="glass-scene" ref={stage}>
-      <canvas className="glass-art" ref={artwork} aria-hidden="true"/>
-      <button className="glass-lens" aria-label="Glass lens, use arrow keys to move" style={{ left: point.x + '%', top: point.y + '%' }}
-        onPointerDown={event => {
-          const rect = event.currentTarget.getBoundingClientRect();
-          grab.current = { x: event.clientX - rect.left - rect.width / 2, y: event.clientY - rect.top - rect.height / 2 };
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
-        onPointerMove={move} onLostPointerCapture={() => { grab.current = null; }} onKeyDown={nudge}>
-        <canvas className="glass-refraction" ref={refraction} aria-hidden="true"/>
-      </button>
-    </div>
-  );
-}
-
 function Tilt() {
   const [active, setActive] = useState(false);
   function follow(event: PointerEvent<HTMLButtonElement>) {
@@ -348,72 +256,6 @@ function Tilt() {
         <span className="tilt-mark"><Plus size={13}/></span>
       </span>
     </button>
-  );
-}
-
-function Slider() {
-  return <div className="slider-demo"><ElasticSlider label="Intensity" showText={false} showValueTooltip defaultValue={28} format={value => value + '%'}/></div>;
-}
-
-function Odometer() {
-  const [count, setCount] = useState(98);
-  return (
-    <div className="odometer-demo">
-      <div className="digits" role="status" aria-label={String(count)}>
-        {String(count).padStart(3, '0').split('').map((digit, index) => (
-          <span className="digit" key={index} aria-hidden="true">
-            <AnimatePresence initial={false}>
-              <motion.span key={digit} initial={{ y: '105%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                exit={{ y: '-105%', opacity: 0 }} transition={{ type: 'spring', stiffness: 310, damping: 27 }}>
-                {digit}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-        ))}
-      </div>
-      <div className="stepper">
-        <Button variant="secondary" size="sm" aria-label="Decrease count" onClick={() => setCount(value => Math.max(0, value - 1))}><Minus size={16}/></Button>
-        <Button variant="secondary" size="sm" aria-label="Increase count" onClick={() => setCount(value => (value + 1) % 1000)}><Plus size={16}/></Button>
-      </div>
-    </div>
-  );
-}
-
-function Magnetic() {
-  const [pressed, setPressed] = useState(false);
-  return (
-    <div className="magnet-target" onPointerMove={event => {
-      if (event.pointerType === 'touch') return;
-      const bounds = event.currentTarget.getBoundingClientRect();
-      event.currentTarget.style.setProperty('--mx', (event.clientX - bounds.left - bounds.width / 2) * .32 + 'px');
-      event.currentTarget.style.setProperty('--my', (event.clientY - bounds.top - bounds.height / 2) * .35 + 'px');
-    }} onPointerLeave={event => {
-      event.currentTarget.style.removeProperty('--mx');
-      event.currentTarget.style.removeProperty('--my');
-    }}>
-      <div className="magnet-translate">
-        <Button variant="secondary" aria-pressed={pressed} onClick={() => setPressed(!pressed)}>
-          {pressed ? <Check size={16}/> : <Cursor size={16}/>}
-          {pressed ? 'Connected' : 'Pull me'}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function Shared() {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <LayoutGroup>
-      <div className="shared-demo" data-expanded={expanded}>
-        <motion.button layout type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="shared-object">
-          <motion.span layout className="shared-art"><Stack size={29} weight="light"/></motion.span>
-          <motion.span layout="position" className="shared-title">Form & space</motion.span>
-          <motion.span layout="position" className="shared-icon">{expanded ? <X size={17}/> : <ArrowsOut size={17}/>}</motion.span>
-          {expanded && <motion.span className="shared-detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>A study in soft edges and shifting scale.</motion.span>}
-        </motion.button>
-      </div>
-    </LayoutGroup>
   );
 }
 
@@ -445,6 +287,7 @@ function FollowToast() {
 
 const showSharedLayout = false;
 const showGooeyDock = false;
+const showFollowToast = false;
 
 function App() {
   const route = useRoute();
@@ -461,34 +304,34 @@ function App() {
           <a className="brand" href="/"><span className="brand-mark"><SquaresFour size={17} weight="fill"/></span>Prompt Glossary</a>
           <nav aria-label="Main"><a className="nav-link" href="/design-system" aria-current={isDesignSystem ? 'page' : undefined}>Design system</a></nav>
         </header>
-        {isDesignSystem ? <DesignSystem theme={theme}/> : <main>
+        {isDesignSystem ? <Suspense fallback={null}><DesignSystem theme={theme}/></Suspense> : <main>
           <header className="intro gallery-intro">
-            <motion.div initial={reduced ? false : entranceStart} animate={entranceEnd} transition={entranceTransition}>
+            <m.div initial={reduced ? false : entranceStart} animate={entranceEnd} transition={entranceTransition}>
               <GlossaryTitle/>
-            </motion.div>
-            <motion.p initial={reduced ? false : entranceStart} animate={entranceEnd}
+            </m.div>
+            <m.p initial={reduced ? false : entranceStart} animate={entranceEnd}
               transition={{ ...entranceTransition, delay: .12 }}>
               Try interactive UI effects, learn their English names, and use those terms to write more precise prompts.
-            </motion.p>
+            </m.p>
           </header>
           <section className="bento" aria-label="UI effect demos">
             <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt" entranceDelay={.24}><Tilt/></Card>
             <Card name="Gooey effect" note={{ text: "click +", arrow: "sweep" }} className="goo" entranceDelay={.32}><Gooey/></Card>
-            <Card name="Water ripple" note={{ text: "click", arrow: "sweep" }} className="water-ripple" entranceDelay={.40}><WaterRipple/></Card>
-            <Card name="Liquid Glass" className="glass"><Glass/></Card>
-            <Card name="Gravity simulation" className="gravity" entranceDelay={.56}><Gravity/></Card>
-            <Card name="Magnetic button" className="magnetic"><Magnetic/></Card>
-            <Card name="Rolling digits" className="odometer" entranceDelay={.56}><Odometer/></Card>
-            <Card name="Dot grid repulsion" className="dot-field"><DotField/></Card>
-            <Card name="Elastic slider" className="elastic" entranceDelay={.56}><Slider/></Card>
-            {showGooeyDock && <Card name="Gooey dock" className="gooey-dock"><GooeyDock/></Card>}
-            {showSharedLayout && <Card name="Shared layout" className="shared"><Shared/></Card>}
+            <Card name="Water ripple" note={{ text: "click", arrow: "sweep" }} className="water-ripple" entranceDelay={.40} deferDemo><WaterRipple/></Card>
+            <Card name="Liquid Glass" className="glass" deferDemo><Glass/></Card>
+            <Card name="Gravity simulation" className="gravity" deferDemo entranceDelay={.56}><Gravity/></Card>
+            <Card name="Magnetic button" className="magnetic" deferDemo><Magnetic/></Card>
+            <Card name="Rolling digits" className="odometer" deferDemo entranceDelay={.56}><Odometer/></Card>
+            <Card name="Dot grid repulsion" className="dot-field" deferDemo><DotField/></Card>
+            <Card name="Elastic slider" className="elastic" deferDemo entranceDelay={.56}><Slider/></Card>
+            {showGooeyDock && <Card name="Gooey dock" className="gooey-dock" deferDemo><GooeyDock/></Card>}
+            {showSharedLayout && <Card name="Shared layout" className="shared" deferDemo><Shared/></Card>}
           </section>
         </main>}
         <footer>
           <a href={profileUrl} target="_blank" rel="noopener noreferrer">© 2026 Yi Xiang</a>
         </footer>
-        {!isDesignSystem && <FollowToast/>}
+        {showFollowToast && !isDesignSystem && <FollowToast/>}
         <ThemeToggle theme={theme} onChange={setTheme}/>
       </div>
     </MotionConfig>
@@ -500,7 +343,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GridTransitionProvider effect="Flux Ring Ripple">
       <InterceptLinks/>
-      <App/>
+      <LazyMotion features={domAnimation}><App/></LazyMotion>
     </GridTransitionProvider>
   </StrictMode>,
 );

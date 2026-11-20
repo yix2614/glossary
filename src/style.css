@@ -17,7 +17,11 @@ button:focus-visible, a:focus-visible, [role=slider]:focus-visible { outline: 2p
 .brand-mark { width: 29px; height: 29px; display: grid; place-items: center; border-radius: var(--radius-control); color: var(--surface); background: var(--accent); }
 .intro { padding: var(--space-8) 0 var(--space-5); }
 h1 { margin: 0; font-size: var(--text-display); line-height: var(--leading-heading); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-heading); }
-.gallery-intro { padding-top: clamp(var(--space-12), 8vw, var(--space-16)); padding-inline: var(--space-2); padding-bottom: var(--space-8); }
+.gallery-intro {
+  padding-top: calc(clamp(var(--space-12), 8vw, var(--space-16)) + 32px);
+  padding-inline: var(--space-2);
+  padding-bottom: var(--space-8);
+}
 .gallery-intro .glossary-title {
   display: flex;
   width: fit-content;
@@ -57,8 +61,6 @@ h1 { margin: 0; font-size: var(--text-display); line-height: var(--leading-headi
 .glossary-glyph[data-art=true] { padding-inline: .075em; }
 .glossary-glyph[data-art=true] > span { opacity: 0; }
 .glossary-glyph[data-art=true] > img { opacity: 1; transform: scale(1); }
-.glossary-title[data-direct=true] .glossary-glyph { padding-inline: 0; }
-.glossary-title[data-direct=true] .glossary-glyph[data-art=false] > img { transition: none; }
 .glossary-word img[data-glyph=tall] { height: 1em; }
 .glossary-word img[data-glyph=descender] { height: .98em; bottom: -.02em; }
 .glossary-word img[data-photo] { height: 1.07em; bottom: .05em; }

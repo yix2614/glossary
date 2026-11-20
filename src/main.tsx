@@ -1,6 +1,7 @@
 import { lazy, StrictMode, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import { GridTransitionProvider, InterceptLinks, useRoute } from 'transitery/react';
 import { domAnimation, LazyMotion, MotionConfig, useInView, useReducedMotion } from 'motion/react';
 import * as m from 'motion/react-m';
@@ -343,6 +344,7 @@ createRoot(document.getElementById('root')!).render(
     <GridTransitionProvider effect="Flux Ring Ripple">
       <InterceptLinks/>
       <LazyMotion features={domAnimation}><App/></LazyMotion>
+      <Analytics/>
     </GridTransitionProvider>
   </StrictMode>,
 );

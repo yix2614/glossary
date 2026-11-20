@@ -473,7 +473,7 @@ function App() {
           </header>
           <section className="bento" aria-label="UI effect demos">
             <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt" entranceDelay={.24}><Tilt/></Card>
-            <Card name="Gooey menu" note={{ text: "click +", arrow: "sweep" }} className="goo" entranceDelay={.32}><Gooey/></Card>
+            <Card name="Gooey effect" note={{ text: "click +", arrow: "sweep" }} className="goo" entranceDelay={.32}><Gooey/></Card>
             <Card name="Water ripple" note={{ text: "click", arrow: "sweep" }} className="water-ripple" entranceDelay={.40}><WaterRipple/></Card>
             <Card name="Liquid Glass" className="glass"><Glass/></Card>
             <Card name="Gravity simulation" className="gravity" entranceDelay={.56}><Gravity/></Card>

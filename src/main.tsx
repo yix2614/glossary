@@ -459,13 +459,13 @@ function App() {
             <p>Try interactive UI effects, learn their English names, and use those terms to write more precise prompts.</p>
           </header>
           <section className="bento" aria-label="UI effect demos">
-            <Card name="Card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt"><Tilt/></Card>
+            <Card name="3D card tilt" note={{ text: "hover", arrow: "loop" }} className="tilt"><Tilt/></Card>
             <Card name="Gooey menu" note={{ text: "click +", arrow: "sweep" }} className="goo"><Gooey/></Card>
             <Card name="Water ripple" className="water-ripple"><WaterRipple/></Card>
             <Card name="Liquid glass" className="glass"><Glass/></Card>
-            <Card name="Gravity" className="gravity"><Gravity/></Card>
+            <Card name="Gravity simulation" className="gravity"><Gravity/></Card>
             <Card name="Magnetic button" className="magnetic"><Magnetic/></Card>
-            <Card name="Odometer" className="odometer"><Odometer/></Card>
+            <Card name="Odometer counter" className="odometer"><Odometer/></Card>
             <Card name="Dot field" className="dot-field"><DotField/></Card>
             <Card name="Elastic slider" className="elastic"><Slider/></Card>
             {showGooeyDock && <Card name="Gooey dock" className="gooey-dock"><GooeyDock/></Card>}

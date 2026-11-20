@@ -27,7 +27,7 @@ h1 { margin: 0; font-size: var(--text-display); line-height: var(--leading-headi
   block-size: 1.3em;
   cursor: default;
   white-space: nowrap;
-  font-size: clamp(1.3rem, 5.3vw, 2.8rem);
+  font-size: clamp(1.3rem, 5.8vw, 3.25rem);
 }
 .glossary-word { display: inline-flex; align-items: baseline; }
 .glossary-glyph {

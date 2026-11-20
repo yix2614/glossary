@@ -1,0 +1,23 @@
+{
+  "name": "effect-index",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "geist": "1.7.0",
+    "motion": "12.29.2",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "transitery": "file:vendor/transitery-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3",
+    "vite": "5.4.21"
+  }
+}
